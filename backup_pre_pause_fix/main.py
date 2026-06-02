@@ -3,17 +3,17 @@
 """
 import sys
 import pygame
-from core.config import *
-from core.game_state import GameState
-from world.map_data import *
-from systems.systems import *
-from graphics.renderer import render_game
-from ui.ui_menu import render_menu, create_menu_buttons
-from ui.ui_hud import (show_build_menu, show_upgrade_menu, handle_popup_click,
+from config import *
+from game_state import GameState
+from map_data import *
+from systems import *
+from renderer import render_game
+from ui_menu import render_menu, create_menu_buttons
+from ui_hud import (show_build_menu, show_upgrade_menu, handle_popup_click,
                     handle_pause_btn_click, render_pause_menu, handle_pause_menu_click)
-from ui.ui_camera import Camera
-from ui.input_router import InputRouter
-from graphics.effects import update_effects
+from ui_camera import Camera
+from input_router import InputRouter
+from effects import update_effects
 
 
 def main():
@@ -66,13 +66,7 @@ def main():
                         game_state.popup_menu = None
                 elif event.key == pygame.K_p:
                     if game_state.phase in (PHASE_PLAYING, PHASE_SAFE):
-                        # P 键与点击暂停按钮行为一致: 已暂停则继续, 未暂停则暂停并打开菜单
-                        if game_state.paused:
-                            game_state.paused = False
-                            game_state._pause_menu_open = False
-                        else:
-                            game_state.paused = True
-                            game_state._pause_menu_open = True
+                        game_state.paused = not game_state.paused
 
             cam_event, cam_data = input_router.handle_event(event, game_state)
 
@@ -93,18 +87,6 @@ def main():
                             break
 
             elif game_state.phase in (PHASE_SAFE, PHASE_PLAYING):
-                # 暂停时, 所有游戏世界点击全部屏蔽, 仅允许点击暂停按钮(打开菜单)
-                if game_state.paused:
-                    if cam_event == 'hud_click':
-                        mx, my = cam_data
-                        if handle_pause_btn_click(game_state, (mx, my)):
-                            continue
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        # 暂停时点击屏幕: 自动打开暂停菜单
-                        if not game_state._pause_menu_open:
-                            game_state._pause_menu_open = True
-                    continue
-
                 # 暂停菜单打开时, 所有点击优先由菜单处理
                 if getattr(game_state, '_pause_menu_open', False):
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -212,6 +194,18 @@ def main():
         elif game_state.phase in (PHASE_SAFE, PHASE_PLAYING):
             render_game(screen, game_state, camera, font_small, font_medium)
             render_pause_menu(screen, game_state, font_medium, font_btn)
+            if game_state.paused:
+                sw, sh = screen.get_width(), screen.get_height()
+                overlay = pygame.Surface((sw, sh))
+                overlay.set_alpha(120)
+                overlay.fill(BLACK)
+                screen.blit(overlay, (0, 0))
+                pause_text = font_title.render("暂停", True, WHITE)
+                px = sw // 2 - pause_text.get_width() // 2
+                py = sh // 2 - pause_text.get_height() // 2
+                screen.blit(pause_text, (px, py))
+                hint_text = font_medium.render("按 P 继续", True, LIGHT_GRAY)
+                screen.blit(hint_text, (sw // 2 - hint_text.get_width() // 2, py + 60))
 
         elif game_state.is_game_over():
             _render_game_over(screen, game_state, font_title, font_medium)
