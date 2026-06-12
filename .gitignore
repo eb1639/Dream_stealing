@@ -35,6 +35,12 @@ tools/debug_*.py
 tools/verify_*.py
 tools/test_*.py
 tools/headless_test.py
+# 一次性图片↔矩阵转换工具（硬编码路径, 已完成使命）
+tools/jpg_to_snow_matrix.py
+tools/list_maps.py
+tools/png_to_snow_matrix.py
+tools/remap_snow_to_hell.py
+tools/render_snow_map.py
 
 # 运行时数据
 save.json
